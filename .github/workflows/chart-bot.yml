@@ -1,0 +1,36 @@
+name: Chart Bot (Melon+Genie)
+
+on:
+  schedule:
+    # UTC 기준 → KST 07:10~01:10 (매시간)
+    - cron: "10 22-23 * * *"  # KST 07:10~08:10
+    - cron: "10 0-16 * * *"   # KST 09:10~01:10
+  workflow_dispatch: {}        # 수동 실행 버튼
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    env:
+      TZ: Asia/Seoul
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install -r requirements.txt
+
+      - name: Run chart collector
+        run: |
+          source .venv/bin/activate
+          python -m src.main
