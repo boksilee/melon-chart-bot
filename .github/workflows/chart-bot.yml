@@ -1,8 +1,8 @@
-name: Chart Bot (Melon+Genie)
+name: Chart Bot 
 
 on:
   schedule:
-    - cron: "*/5 * * * *"   # 5분마다 트리거 (UTC)
+    - cron: "*/5 * * * *"   # 5분마다 (UTC)
   workflow_dispatch:
 
 jobs:
@@ -21,48 +21,49 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Guard — run only at allowed KST window
+      - name: Decide whether to run (KST guard)
+        id: guard
         run: |
           H=$(TZ=Asia/Seoul date +%H)
           M=$(TZ=Asia/Seoul date +%M)
-
           echo "KST now: $(TZ=Asia/Seoul date)  (H=$H, M=$M)"
 
-          # 1) 금지 구간: 01:15–06:59 (07:00도 금지면 <=07:00로 설정)
+          RUN=false
+          # 금지: 01:15–06:59, 07:00
           if [ "$H" = "01" ] && [ "$M" -ge 15 ]; then
-            echo "⛔ In blocked window (01:15–06:59). Exit."
-            exit 0
+            RUN=false
+          elif [ "$H" -ge 02 ] && [ "$H" -le 06 ]; then
+            RUN=false
+          elif [ "$H" = "07" ] && [ "$M" -le 00 ]; then
+            RUN=false
+          # 허용: 매 시 05–10분
+          elif [ "$M" -ge 05 ] && [ "$M" -le 10 ]; then
+            RUN=true
           fi
-          if [ "$H" -ge 02 ] && [ "$H" -le 06 ]; then
-            echo "⛔ In blocked window (01:15–06:59). Exit."
-            exit 0
-          fi
-          if [ "$H" = "07" ] && [ "$M" -le 00 ]; then
-            echo "⛔ In blocked at 07:00. Exit."
-            exit 0
-          fi
+          echo "RUN=$RUN" >> $GITHUB_ENV
 
-          # 2) 허용 분: 매 시 05–10분 사이만 (05,06,07,08,09,10 포함)
-          if [ "$M" -lt 05 ] || [ "$M" -gt 10 ]; then
-            echo "⛔ Not in :05–:10 minute window. Exit."
-            exit 0
-          fi
-
-          echo "✅ Pass guard. Continue."
+      - name: Show time
+        if: env.RUN == 'true'
+        run: |
+          echo "UTC: $(date -u)"
+          echo "KST: $(TZ=Asia/Seoul date)"
 
       - name: Set up Python
+        if: env.RUN == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: "3.9"
           cache: "pip"
 
       - name: Install dependencies
+        if: env.RUN == 'true'
         run: |
           python -m venv .venv
           source .venv/bin/activate
           pip install -r requirements.txt
 
       - name: Run chart collector
+        if: env.RUN == 'true'
         run: |
           source .venv/bin/activate
           python -m src.main
