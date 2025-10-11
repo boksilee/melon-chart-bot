@@ -26,6 +26,7 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 PLATFORM_LINKS = {
     "melon": "https://www.melon.com/chart/index.htm",
     "genie": "https://www.genie.co.kr/chart/top200",
+    "youtube": "https://www.youtube.com"
 }
 
 # ────────────────────────────────────────────────────────────────────────────────
