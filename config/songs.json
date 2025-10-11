@@ -1,0 +1,23 @@
+{
+  "targets": [
+    {
+      "title": "Pretty Please",
+      "artist": "하츠투하츠",
+      "aliases": {
+        "title": ["프리티 플리즈"],
+        "artist": ["Hearts2Hearts (하츠투하츠)", "Hearts2Hearts"]
+      },
+      "platforms": ["melon", "genie"]
+    },
+
+    {
+      "title": "Rich Man",
+      "artist": "aespa",
+      "aliases": {
+        "title": ["rich man","리치맨"],
+        "artist": ["에스파", "aespa"]
+      },
+      "platforms": ["melon", "genie"]
+    }
+  ]
+}
