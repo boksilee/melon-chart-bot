@@ -31,6 +31,9 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run chart collector
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          PYTHONPATH: ${{ github.workspace }}/src
         run: |
           source .venv/bin/activate
           python -m src.main
