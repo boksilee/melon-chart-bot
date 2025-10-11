@@ -1,4 +1,4 @@
-name: Chart Bot (Melon+Genie)
+name: Chart Bot
 
 on:
   schedule:
@@ -12,7 +12,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       TZ: Asia/Seoul
+      PYTHONPATH: ${{ github.workspace }}/src
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}   # ← 추가
 
     steps:
       - name: Checkout
@@ -31,9 +33,6 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run chart collector
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          PYTHONPATH: ${{ github.workspace }}/src
         run: |
           source .venv/bin/activate
           python -m src.main
