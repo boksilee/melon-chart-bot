@@ -4,6 +4,7 @@ from datetime import datetime
 from pathlib import Path
 import json
 from typing import Dict, List, Optional, Tuple
+from zoneinfo import ZoneInfo
 
 from config_loader import load_songs_config, iter_targets
 from crawler_melon import get_melon_hot100_items, find_rank_by_title_artist_with_alias as find_melon_rank
@@ -60,7 +61,9 @@ def change_emoji(prev: Optional[int], curr: Optional[int], had_history_file: boo
 # 실행본
 # ──────────────────────────────────────────────────────────────────────────────
 def main():
-    now = datetime.now().strftime("%Y-%m-%d %H:%M")
+    now_kst = datetime.now(ZoneInfo("Asia/Seoul"))
+    now = now_kst.strftime("%Y-%m-%d %H:%M")  # Slack 헤더용(그대로 사용)
+    tweet_header = f"{now_kst.month}월 {now_kst.day}일 {now_kst.hour}시 기준"
     print(f"\n🚀 [음원 차트 스크래핑 시작] ({now})\n")
 
     cfg = load_songs_config()
@@ -105,6 +108,10 @@ def main():
         melon_rank = None
         melon_rank_txt = None
         melon_line = None
+        melon_emo = None
+        melon_label = None
+
+
         if "melon" in t.get("platforms", []):
             melon_rank = find_melon_rank(
                 melon_items, title=title, artist=artist,
@@ -115,14 +122,16 @@ def main():
             prev = melon_prev_map.get(key)
             if prev == -1:
                 prev = None
-            emo, label = change_emoji(prev, melon_rank, had_history_file=melon_had_file)
+            melon_emo, melon_label = change_emoji(prev, melon_rank, had_history_file=melon_had_file)
             melon_rank_txt = f"{melon_rank} 위" if melon_rank is not None else "미진입"
-            melon_line = f"• 멜론 : *{melon_rank_txt}*  {emo}({label})"
+            melon_line = f"• 멜론 : *{melon_rank_txt}*  {melon_emo}({melon_label})"
 
         # ── 지니 순위 (플랫폼 있으면만 표시)
         genie_rank = None
         genie_rank_txt = None
         genie_line = None
+        genie_emo = None
+        genie_label = None
         if "genie" in t.get("platforms", []):
             genie_rank = find_genie_rank(
                 genie_items, title=title, artist=artist,
@@ -133,9 +142,9 @@ def main():
             prev = genie_prev_map.get(key)
             if prev == -1:
                 prev = None
-            emo, label = change_emoji(prev, genie_rank, had_history_file=genie_had_file)
+            genie_emo, genie_label = change_emoji(prev, genie_rank, had_history_file=genie_had_file)
             genie_rank_txt = f"{genie_rank} 위" if genie_rank is not None else "미진입"
-            genie_line = f"• 지니 : *{genie_rank_txt}*  {emo}({label})"
+            genie_line = f"• 지니 : *{genie_rank_txt}*  {genie_emo}({genie_label})"
 
         # ── 유튜브 조회수 (songs.json에 youtube가 있을 때만, ‘숫자만’ 표시)
         yt_line = None
@@ -165,14 +174,15 @@ def main():
         combined_blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": section_text}})
         combined_blocks.append({"type": "divider"})
 
-        # ── 트위터 텍스트 (유튜브는 ‘숫자만’)
+        # ── 트위터 텍스트 (멜론/지니는 동일 이모지 포함, 유튜브는 숫자만)
         tweet_block_lines = [f"{title} - {artist}"]
         if melon_rank_txt is not None:
-            tweet_block_lines.append(f"멜론 : {melon_rank_txt}")
+            # melon_emo는 위에서 change_emoji로 계산된 값
+            tweet_block_lines.append(f"멜론 : {melon_rank_txt} {melon_emo}")
         if genie_rank_txt is not None:
-            tweet_block_lines.append(f"지니 : {genie_rank_txt}")
+            tweet_block_lines.append(f"지니 : {genie_rank_txt} {genie_emo}")
         if yt_view is not None:
-            tweet_block_lines.append(f"유튜브 : {yt_view:,}회")
+            tweet_block_lines.append(f"유튜브 : {yt_view:,}회")  # 이모지/증감 없음
         tweet_lines_all.append("\n".join(tweet_block_lines))
 
     # 히스토리 저장 (유튜브는 값만 기록)
@@ -193,7 +203,7 @@ def main():
     blocks.extend(combined_blocks[:-1] if combined_blocks and combined_blocks[-1].get("type") == "divider" else combined_blocks)
 
     # 트윗 버튼
-    tweet_text = "\n\n".join(tweet_lines_all)
+    tweet_text = tweet_header + "\n\n" + "\n\n".join(tweet_lines_all)
     from urllib.parse import quote
     tweet_url = f"https://twitter.com/intent/tweet?text={quote(tweet_text)}"
     actions = [
