@@ -2,9 +2,8 @@ name: Chart Bot
 
 on:
   schedule:
-    # UTC 기준 → KST 07:10~01:10 (매시간)
-    - cron: "10 22-23 * * *"  # KST 07:10~08:10
-    - cron: "10 0-16 * * *"   # KST 09:10~01:10
+    # KST 00:10, 01:10, 07:10–23:10 ↔ UTC 15:10, 16:10, 22:10–14:10
+    - cron: "10 0-16,22-23 * * *"
   workflow_dispatch: {}        # 수동 실행 버튼
 
 jobs:
@@ -17,6 +16,11 @@ jobs:
       YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}   # ← 추가
 
     steps:
+      - name: Show time
+        run: |
+         echo "UTC: $(date -u)"
+         echo "KST: $(TZ=Asia/Seoul date)"
+         
       - name: Checkout
         uses: actions/checkout@v4
 
