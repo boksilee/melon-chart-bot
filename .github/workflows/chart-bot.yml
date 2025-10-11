@@ -1,28 +1,54 @@
-name: Chart Bot
+name: Chart Bot (Melon+Genie)
 
 on:
   schedule:
-    # KST 00:10, 01:10, 07:10–23:10 ↔ UTC 15:10, 16:10, 22:10–14:10
-    - cron: "10 0-16,22-23 * * *"
-  workflow_dispatch: {}        # 수동 실행 버튼
+    - cron: "*/5 * * * *"   # 5분마다 트리거 (UTC)
+  workflow_dispatch:
 
 jobs:
   run:
     runs-on: ubuntu-latest
+    concurrency:
+      group: chart-bot
+      cancel-in-progress: true
     env:
       TZ: Asia/Seoul
       PYTHONPATH: ${{ github.workspace }}/src
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-      YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}   # ← 추가
+      YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
 
     steps:
-      - name: Show time
-        run: |
-         echo "UTC: $(date -u)"
-         echo "KST: $(TZ=Asia/Seoul date)"
-         
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Guard — run only at allowed KST window
+        run: |
+          H=$(TZ=Asia/Seoul date +%H)
+          M=$(TZ=Asia/Seoul date +%M)
+
+          echo "KST now: $(TZ=Asia/Seoul date)  (H=$H, M=$M)"
+
+          # 1) 금지 구간: 01:15–06:59 (07:00도 금지면 <=07:00로 설정)
+          if [ "$H" = "01" ] && [ "$M" -ge 15 ]; then
+            echo "⛔ In blocked window (01:15–06:59). Exit."
+            exit 0
+          fi
+          if [ "$H" -ge 02 ] && [ "$H" -le 06 ]; then
+            echo "⛔ In blocked window (01:15–06:59). Exit."
+            exit 0
+          fi
+          if [ "$H" = "07" ] && [ "$M" -le 00 ]; then
+            echo "⛔ In blocked at 07:00. Exit."
+            exit 0
+          fi
+
+          # 2) 허용 분: 매 시 05–10분 사이만 (05,06,07,08,09,10 포함)
+          if [ "$M" -lt 05 ] || [ "$M" -gt 10 ]; then
+            echo "⛔ Not in :05–:10 minute window. Exit."
+            exit 0
+          fi
+
+          echo "✅ Pass guard. Continue."
 
       - name: Set up Python
         uses: actions/setup-python@v5
