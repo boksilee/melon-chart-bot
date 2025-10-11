@@ -1,0 +1,95 @@
+name: Chart Bot start v2
+
+on:
+  workflow_dispatch:
+    inputs:
+      trigger:
+        description: "who/what triggered this run"
+        required: true
+        type: choice
+        options: [cron, slack, manual]
+        default: manual
+      slot:
+        description: "idempotency key (e.g., 2025-10-11T23:10)"
+        required: false
+        type: string
+      respect_window:
+        description: "KST 분창(:05–:10) 및금지시간(01:15–07:00) 적용 여부"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  run:
+    # slot이 있으면 같은 slot은 하나만 실행, 없으면 run_id 기준
+    concurrency:
+      group: chart-bot-${{ (github.event.inputs.slot != '' && github.event.inputs.slot) || github.run_id }}
+      cancel-in-progress: false
+
+    runs-on: ubuntu-latest
+    env:
+      TZ: Asia/Seoul
+      PYTHONPATH: ${{ github.workspace }}/src
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 분창/금지시간을 적용해야 할 때만 가드 실행
+      - name: Decide whether to run (KST guard, optional)
+        id: guard
+        if: ${{ github.event.inputs.respect_window == 'true' || github.event.inputs.trigger == 'cron' }}
+        run: |
+          H=$(TZ=Asia/Seoul date +%H)
+          M=$(TZ=Asia/Seoul date +%M)
+          echo "KST now: $(TZ=Asia/Seoul date)  (H=$H, M=$M)"
+
+          RUN=true
+          # 금지: 01:15–06:59, 07:00
+          if [ "$H" = "01" ] && [ "$M" -ge 15 ]; then
+            RUN=false
+          elif [ "$H" -ge 02 ] && [ "$H" -le 06 ]; then
+            RUN=false
+          elif [ "$H" = "07" ] && [ "$M" -le 00 ]; then
+            RUN=false
+          # 허용: 매 시 05–10분 (그 외 분은 skip)
+          elif [ "$M" -ge 05 ] && [ "$M" -le 10 ]; then
+            RUN=true
+          else
+            RUN=false
+          fi
+          echo "RUN=$RUN" >> $GITHUB_ENV
+
+      - name: Echo dispatch info
+        run: |
+          echo "trigger=${{ github.event.inputs.trigger }}"
+          echo "slot=${{ github.event.inputs.slot }}"
+          echo "respect_window=${{ github.event.inputs.respect_window }}"
+
+      - name: Show time
+        if: ${{ env.RUN != 'false' }}   # 가드가 없으면 RUN은 비어있음 -> 통과
+        run: |
+          echo "UTC: $(date -u)"
+          echo "KST: $(TZ=Asia/Seoul date)"
+
+      - name: Set up Python
+        if: ${{ env.RUN != 'false' }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+          cache: "pip"
+
+      - name: Install dependencies
+        if: ${{ env.RUN != 'false' }}
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install -r requirements.txt
+
+      - name: Run chart collector
+        if: ${{ env.RUN != 'false' }}
+        run: |
+          source .venv/bin/activate
+          python -m src.main
