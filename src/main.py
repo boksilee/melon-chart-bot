@@ -63,7 +63,8 @@ def change_emoji(prev: Optional[int], curr: Optional[int], had_history_file: boo
 def main():
     now_kst = datetime.now(ZoneInfo("Asia/Seoul"))
     now = now_kst.strftime("%Y-%m-%d %H:%M")  # Slack 헤더용(그대로 사용)
-    tweet_header = f"{now_kst.month}월 {now_kst.day}일 {now_kst.hour}시 기준"
+    #tweet_header = f"{now_kst.month}월 {now_kst.day}일 {now_kst.hour}시 기준"
+    tweet_header = f"{now_kst.month}월 {now_kst.day}일 MV 조회수"
     print(f"\n🚀 [음원 차트 스크래핑 시작] ({now})\n")
 
     cfg = load_songs_config()
@@ -174,15 +175,35 @@ def main():
         combined_blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": section_text}})
         combined_blocks.append({"type": "divider"})
 
-        # ── 트위터 텍스트 (멜론/지니는 동일 이모지 포함, 유튜브는 숫자만)
-        tweet_block_lines = [f"{title} - {artist}"]
+        title_emoji = ""
+        if title.lower() == "hunter":
+            title_emoji = "🧟 "  # 예: 헌터
+        elif title.lower() == "gasoline":
+            title_emoji = "🔥 "  # 예: 가솔린
+
+        # yt_view는 위에서 이미 계산된 상태라고 가정
+        if yt_view is not None:
+            # 타이틀 - 조회수 형태로 1줄 만들기
+            first_line = f"{title_emoji}{title} - {yt_view:,}회"
+        else:
+            # 조회수 없으면 타이틀만
+            first_line = f"{title_emoji}{title}" if title_emoji else f"{title}"
+
+        tweet_block_lines = [first_line]
+
+        # 멜론 / 지니 줄 추가
         if melon_rank_txt is not None:
-            # melon_emo는 위에서 change_emoji로 계산된 값
             tweet_block_lines.append(f"멜론 : {melon_rank_txt} {melon_emo}")
         if genie_rank_txt is not None:
             tweet_block_lines.append(f"지니 : {genie_rank_txt} {genie_emo}")
+
+
         if yt_view is not None:
-            tweet_block_lines.append(f"유튜브 : {yt_view:,}회")  # 이모지/증감 없음
+            target = 15000000
+            # 14M 이상이고 15M 미만일 때만 남은 회수 추가
+            if 14000000 <= yt_view < target:
+                remain = target - yt_view
+                tweet_block_lines.append(f"      15M까지 {remain:,}회")
         tweet_lines_all.append("\n".join(tweet_block_lines))
 
     # 히스토리 저장 (유튜브는 값만 기록)
