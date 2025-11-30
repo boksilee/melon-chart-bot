@@ -1,29 +1,6 @@
 {
   "targets": [
     {
-      "title": "Pretty Please",
-      "artist": "하츠투하츠",
-      "aliases": {
-        "title": ["프리티 플리즈"],
-        "artist": ["Hearts2Hearts (하츠투하츠)", "Hearts2Hearts"]
-      },
-      "platforms": ["melon", "genie"],
-      "youtube": {
-        "url": "https://www.youtube.com/watch?v=ufwB9Uja_wM"
-      }
-    },
-
-    {
-      "title": "Rich Man",
-      "artist": "aespa",
-      "aliases": {
-        "title": ["rich man", "리치맨"],
-        "artist": ["에스파", "aespa"]
-      },
-      "platforms": ["melon", "genie"]
-    },
-
-    {
       "title": "Hunter",
       "artist": "KEY",
       "aliases": {
@@ -34,6 +11,20 @@
       "youtube": {
         "url": "https://www.youtube.com/watch?v=ktCF5D6ECk0"
       }
+    },
+
+    {
+      "title": "Gasoline",
+      "artist": "KEY",
+      "aliases": {
+        "title": [],
+        "artist": ["키", "키 (KEY)"]
+      },
+      "platforms": [],
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=UNFk6_to5_0"
+      }
     }
+
   ]
 }
