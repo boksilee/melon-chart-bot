@@ -178,8 +178,8 @@ def main():
         title_emoji = ""
         if title.lower() == "hunter":
             title_emoji = "🧟 "  # 예: 헌터
-        elif title.lower() == "gasoline":
-            title_emoji = "🔥 "  # 예: 가솔린
+        elif title.lower() == "pleasure shop":
+            title_emoji = "🍸"  # 예: 가솔린
 
         # yt_view는 위에서 이미 계산된 상태라고 가정
         if yt_view is not None:
@@ -199,11 +199,11 @@ def main():
 
 
         if yt_view is not None:
-            target = 15000000
-            # 14M 이상이고 15M 미만일 때만 남은 회수 추가
-            if 14000000 <= yt_view < target:
+            target = 10000000
+            # 10M 으로 기준 변경
+            if  yt_view < target: #if 14000000 <= yt_view < target:
                 remain = target - yt_view
-                tweet_block_lines.append(f"      15M까지 {remain:,}회")
+                tweet_block_lines.append(f"      10M까지 {remain:,}회")
         tweet_lines_all.append("\n".join(tweet_block_lines))
 
     # 히스토리 저장 (유튜브는 값만 기록)
