@@ -49,19 +49,6 @@
       }
     },
     {
-      "title": "Hunter",
-      "artist": "KEY",
-      "aliases": {
-        "title": [],
-        "artist": ["키", "키 (KEY)"]
-      },
-      "platforms": [],
-      "youtube": {
-        "url": "https://www.youtube.com/watch?v=ktCF5D6ECk0"
-      }
-    },
-
-    {
       "title": "Gasoline",
       "artist": "KEY",
       "aliases": {
@@ -109,8 +96,17 @@
       "youtube": {
         "url": "https://www.youtube.com/watch?v=LgQRl5qED6c"
       }
-    }
-
-    
+    },    {
+      "title": "Hunter",
+      "artist": "KEY",
+      "aliases": {
+        "title": [],
+        "artist": ["키", "키 (KEY)"]
+      },
+      "platforms": [],
+      "youtube": {
+        "url": "https://www.youtube.com/watch?v=ktCF5D6ECk0"
+      }
+    }    
   ]
 }
